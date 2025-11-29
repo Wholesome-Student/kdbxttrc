@@ -1,0 +1,36 @@
+# MacOS
+.DS_Store
+Thumbs.db
+
+# NixOS
+.direnv/
+
+# Editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Node
+node_modules/
+
+# Build / output
+dist/
+out/
+build/
+
+# Deno
+.DENO_DIR/
+.cache/
+
+# Environment variables
+.env
+
+# Temporary files
+*.tmp
+
+# Local binaries
+bin/
+
+# Ignore macOS Finder files
+Icon?

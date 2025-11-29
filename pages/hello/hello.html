@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="./hello.css" />
+    <script src="./hello.js" defer></script>
+    <title>Hello API demo</title>
+  </head>
+  <body>
+    <h1>API demo</h1>
+
+    <section>
+      <h2>GET /api/hello?name=...</h2>
+      <form id="getForm">
+        <label>Name: <input name="name" value="Alice" /></label>
+        <button type="submit">Send GET</button>
+      </form>
+      <pre id="getResult">---</pre>
+    </section>
+
+    <section>
+      <h2>POST /api/hello</h2>
+      <p>JSON: { "name": "Bob" }</p>
+      <form id="postJsonForm">
+        <label>Name: <input name="name" value="Bob" /></label>
+        <button type="submit">Send POST</button>
+      </form>
+      <pre id="postResult">---</pre>
+    </section>
+  </body>
+</html>
