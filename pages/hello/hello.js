@@ -30,3 +30,12 @@ document
     });
     await showResult(document.getElementById("postResult"), res);
   });
+
+const dbBtn = document.getElementById("dbTestBtn");
+if (dbBtn) {
+  dbBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const res = await fetch("/api/dbtest");
+    await showResult(document.getElementById("dbResult"), res);
+  });
+}
