@@ -1,3 +1,5 @@
+import "https://deno.land/x/dotenv/load.ts";
+
 const TEXT_ENCODER = new TextEncoder();
 
 /**
