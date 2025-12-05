@@ -84,41 +84,96 @@ async function serveFile(path: string) {
 }
 
 function mapRequestToFile(pathname: string) {
-  // Pages routes
-  // Split and handle various shapes:
-  //  - /                -> ./pages/index/index.html
-  //  - /foo             -> ./pages/foo/foo.html
-  //  - /foo.html        -> ./pages/foo/foo.html
-  //  - /foo.css         -> ./pages/foo/foo.css
-  //  - /foo/bar         -> ./pages/foo/bar.html
-  //  - /foo/bar.ext     -> ./pages/foo/bar.ext
+  const c = getPageCandidates(pathname);
+  return c.length > 0 ? c[0] : "";
+}
+
+/**
+ * 与えられたパス名に対応する最初に見つかったページファイルを解決する
+ *
+ * @param pathname リクエストのパス名
+ * @returns ファイルシステムのパス、または見つからなかった場合はnull
+ *
+ * @example
+ *  - /               -> ./pages/index/index.html
+ *  - /foo            -> ./pages/foo/index.html, ./pages/foo/foo.html
+ *  - /foo.html       -> ./pages/foo/foo.html
+ *  - /foo/bar        -> ./pages/foo/bar/index.html, ./pages/foo/bar.html
+ *  - /foo/bar.ext    -> ./pages/foo/bar.ext
+ */
+async function resolvePageFile(pathname: string): Promise<string | null> {
+  const candidates = getPageCandidates(pathname);
+  for (const c of candidates) {
+    if (await fileExists(c)) return c;
+  }
+  return null;
+}
+
+/**
+ * 与えられたパス名に対応するページファイルの候補を順序付きで返す
+ *
+ * @param pathname リクエストのパス名
+ * @returns ページファイルの候補パスの配列
+ */
+function getPageCandidates(pathname: string): string[] {
+  // パスを`/`で分割し、空のセグメントを除去
   const segs = pathname.split("/").filter(Boolean);
+  const candidates: string[] = [];
+
+  // ルート
   if (segs.length === 0) {
-    return "./pages/index/index.html";
+    candidates.push("./pages/index/index.html");
+    return candidates;
   }
 
+  // 単一セグメント: /hoge, /hoge.html, /hoge/
   if (segs.length === 1) {
     const a = segs[0];
-    // if a has extension
     const idx = a.lastIndexOf(".");
     if (idx !== -1) {
       const name = a.slice(0, idx);
-      const ext = a.slice(idx);
-      return `./pages/${name}/${name}${ext}`;
+      const ext = a.slice(idx).toLowerCase();
+      if (ext === ".html") {
+        // /hoge.html -> pages/hoge/index.html
+        candidates.push(`./pages/${name}/index.html`);
+        return candidates;
+      }
+      // その他の拡張子は直接ファイルを参照する（例: /hello.css -> pages/hello/hello.css）
+      candidates.push(`./pages/${name}/${name}${ext}`);
+      return candidates;
     }
-    // no ext -> pages/a/a.html
-    return `./pages/${a}/${a}.html`;
+
+    // 拡張子なしはディレクトリの index.html を返す
+    candidates.push(`./pages/${a}/index.html`);
+    return candidates;
   }
 
-  // segs.length >= 2
-  // map /dir/inner... -> ./pages/dir/inner...
+  // 2セグメント以上: /hoge/huga, /hoge/huga.html, /hoge/huga/
   const dir = segs[0];
-  const rest = segs.slice(1).join("/");
-  // if rest has extension, keep it; else append .html
-  if (rest.includes(".")) {
-    return `./pages/${dir}/${rest}`;
+  const restSegs = segs.slice(1);
+  const last = restSegs[restSegs.length - 1];
+  const lastDot = last.lastIndexOf(".");
+
+  if (lastDot !== -1) {
+    const ext = last.slice(lastDot).toLowerCase();
+    const nameWithoutExt = last.slice(0, lastDot);
+    if (ext === ".html") {
+      // /hoge/.../huga.html -> pages/hoge/.../huga/index.html
+      const restPath = [...restSegs.slice(0, -1), nameWithoutExt].join("/");
+      candidates.push(`./pages/${dir}/${restPath}/index.html`);
+      return candidates;
+    }
+
+    // 拡張子が HTML 以外なら直接ファイルを参照する
+    const restPath = restSegs.join("/");
+    candidates.push(`./pages/${dir}/${restPath}`);
+    return candidates;
   }
-  return `./pages/${dir}/${rest}.html`;
+
+  // 拡張子無しのネストパス -> pages/dir/rest.../index.html
+  const restPath = restSegs.join("/");
+  candidates.push(`./pages/${dir}/${restPath}/index.html`);
+  return candidates;
 }
 
 /**
@@ -195,22 +250,10 @@ await Deno.serve({ port: 8000 }, async (req) => {
       if (apiResp) return apiResp;
       return notFound();
     }
-    const mapped = mapRequestToFile(pathname);
-    if (!mapped) return notFound();
 
-    if (!(await fileExists(mapped))) {
-      // if requested file not found, try a couple of fallbacks for common cases
-      // e.g., request /foo -> try ./pages/foo/index.html
-      if (mapped.startsWith("./pages/")) {
-        const tryIndex = mapped.replace(/\/(?:[^\/]+)\.html$/, "/index.html");
-        if (tryIndex !== mapped && (await fileExists(tryIndex))) {
-          return serveFile(tryIndex);
-        }
-      }
-      return notFound();
-    }
-
-    return serveFile(mapped);
+    const filePath = await resolvePageFile(pathname);
+    if (!filePath) return notFound();
+    return serveFile(filePath);
   } catch (err) {
     console.error("Request handler failed", err);
     return internalError();
