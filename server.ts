@@ -199,8 +199,6 @@ async function handleApi(
   const candidates = [
     `./api/endpoints/${rest}.ts`,
     `./api/endpoints/${rest}.js`,
-    `./api/endpoints/${rest}/index.ts`,
-    `./api/endpoints/${rest}/index.js`,
   ];
 
   for (const c of candidates) {
