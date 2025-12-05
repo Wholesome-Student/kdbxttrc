@@ -33,20 +33,40 @@ function getContentType(path: string): string | undefined {
   }
 }
 
+/**
+ * 400レスポンスを返す
+ * @param message エラーメッセージ
+ * @returns 400 エラーレスポンス
+ */
 function badRequest(message = "Bad Request") {
   return new Response(TEXT_ENCODER.encode(message), {
     status: 400,
   });
 }
 
+/**
+ * 404レスポンスを返す
+ * @param message エラーメッセージ
+ * @returns 404 エラーレスポンス
+ */
 function notFound(message = "Not Found") {
   return new Response(TEXT_ENCODER.encode(message), { status: 404 });
 }
 
+/**
+ * 500エラーのレスポンスを返す
+ * @param message エラーメッセージ
+ * @returns 500 エラーレスポンス
+ */
 function internalError(message = "Internal Server Error") {
   return new Response(TEXT_ENCODER.encode(message), { status: 500 });
 }
 
+/**
+ * パス名を正規化する
+ * @param pathname リクエストのパス名
+ * @returns 正規化されたパス名、または不正な場合はnull
+ */
 function normalizePathname(pathname: string) {
   try {
     pathname = decodeURIComponent(pathname);
@@ -57,6 +77,11 @@ function normalizePathname(pathname: string) {
   return pathname;
 }
 
+/**
+ * ファイルが存在するか確認する
+ * @param path ファイルシステムのパス
+ * @returns ファイルが存在する場合はtrue、存在しない場合はfalse
+ */
 async function fileExists(path: string) {
   try {
     const stat = await Deno.stat(path);
@@ -66,6 +91,11 @@ async function fileExists(path: string) {
   }
 }
 
+/**
+ * ファイルを読み込み、レスポンスとして返す
+ * @param path ファイルシステムのパス
+ * @returns
+ */
 async function serveFile(path: string) {
   try {
     const data = await Deno.readFile(path);
@@ -83,6 +113,12 @@ async function serveFile(path: string) {
   }
 }
 
+/**
+ * 与えられたパス名に対応するページファイルをマッピングする（存在確認はしない）
+ *
+ * @param pathname リクエストのパス名
+ * @returns
+ */
 function mapRequestToFile(pathname: string) {
   const c = getPageCandidates(pathname);
   return c.length > 0 ? c[0] : "";
@@ -177,23 +213,18 @@ function getPageCandidates(pathname: string): string[] {
 }
 
 /**
- * Handle API requests by dynamically importing modules from ./api/endpoints.
- * The module should export a `default` async function that accepts
- * a Request and returns a Response (or Promise<Response>).
+ * APIハンドラを処理する
  *
- * Supported file locations (checked in order):
- *  - ./api/endpoints/<rest>.ts
- *  - ./api/endpoints/<rest>.js
- *  - ./api/endpoints/<rest>/index.ts
- *  - ./api/endpoints/<rest>/index.js
+ * @param req リクエストオブジェクト
+ * @param pathname リクエストのパス名
+ * @returns レスポンスオブジェクト、または該当するハンドラがない場合はnull
  */
 async function handleApi(
   req: Request,
   pathname: string
 ): Promise<Response | null> {
-  // strip leading /api or /api/
+  // /api または /api/ を取り除く
   let rest = pathname.replace(/^\/api\/?/, "");
-  // if empty, no specific handler
   if (!rest) return null;
 
   const candidates = [
@@ -204,20 +235,18 @@ async function handleApi(
   for (const c of candidates) {
     if (await fileExists(c)) {
       try {
-        // import using URL relative to this module
         const moduleUrl = new URL(c, import.meta.url).href;
         const mod = await import(moduleUrl);
-        // prefer default export, fallback to `handler`
         const fn = mod.default ?? mod.handler;
+        // 呼び出し可能か確認
         if (typeof fn === "function") {
-          // call handler and return its Response
           const maybeResp = await fn(req);
-          // Expect the handler to return a Response
           if (maybeResp instanceof Response) return maybeResp;
-          // If it's not a Response, try to serialize it as JSON
           return new Response(JSON.stringify(maybeResp), {
             status: 200,
-            headers: { "content-type": "application/json; charset=utf-8" },
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+            },
           });
         }
         return internalError("API module does not export a handler function");
@@ -242,7 +271,6 @@ await Deno.serve({ port: 8000 }, async (req) => {
       return badRequest("Invalid path");
     }
 
-    // If this is an API request, try to dispatch to an API module first
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       const apiResp = await handleApi(req, pathname);
       if (apiResp) return apiResp;
