@@ -120,15 +120,15 @@ function mapRequestToFile(pathname: string) {
 }
 
 /**
- * Handle API requests by dynamically importing modules from ./api.
+ * Handle API requests by dynamically importing modules from ./api/endpoints.
  * The module should export a `default` async function that accepts
  * a Request and returns a Response (or Promise<Response>).
  *
  * Supported file locations (checked in order):
- *  - ./api/<rest>.ts
- *  - ./api/<rest>.js
- *  - ./api/<rest>/index.ts
- *  - ./api/<rest>/index.js
+ *  - ./api/endpoints/<rest>.ts
+ *  - ./api/endpoints/<rest>.js
+ *  - ./api/endpoints/<rest>/index.ts
+ *  - ./api/endpoints/<rest>/index.js
  */
 async function handleApi(
   req: Request,
@@ -140,10 +140,10 @@ async function handleApi(
   if (!rest) return null;
 
   const candidates = [
-    `./api/${rest}.ts`,
-    `./api/${rest}.js`,
-    `./api/${rest}/index.ts`,
-    `./api/${rest}/index.js`,
+    `./api/endpoints/${rest}.ts`,
+    `./api/endpoints/${rest}.js`,
+    `./api/endpoints/${rest}/index.ts`,
+    `./api/endpoints/${rest}/index.js`,
   ];
 
   for (const c of candidates) {
