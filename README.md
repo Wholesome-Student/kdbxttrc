@@ -11,9 +11,20 @@
 - `Ctrl + Shift + p` > `Deno: Initialize Workspace Configuration` を実行する
   - Node 拡張機能がその workspace で無効化されて赤線が消える
 
+5. `.env` を作成して以下を記述
+
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=kbtxdb
+DB_PASS=password
+DB_NAME=kbtxdb
+```
+
 ## 実行方法
 
 ```bash
+docker compose up -d
 deno task start
 ```
 
