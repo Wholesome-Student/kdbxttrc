@@ -68,3 +68,6 @@ ALTER TABLE `user_answer`
 
 ALTER TABLE `user`
   ADD CONSTRAINT fk_user_bingo FOREIGN KEY (bingo_id) REFERENCES `bingo`(id) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER USER 'kbtxdb'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+FLUSH PRIVILEGES;
