@@ -12,28 +12,39 @@ export default async function handler(req: Request): Promise<Response> {
       }
 
       const data = await req.formData().catch(() => null);
-      const username: string | undefined = data?.get("username")?.toString();
-      if (username === undefined || username.trim() === "") {
+      const userName: string | undefined = data?.get("user_name")?.toString();
+      if (userName === undefined || userName.trim() === "") {
         return json({ error: "ユーザー名は必須です" }, 400);
       }
 
-      // ここでユーザー名の処理を行う（例: データベースに保存、セッション開始など）
-      const sessionId: string = crypto.randomUUID();
-      const now: string = new Date()
-        .toLocaleString("ja-JP")
-        .replaceAll("/", "-");
+      // 'a'~'z'までの配列を作成してランダムにシャッフルする
+      const seed = shuffleArray(
+        Array.from(
+          { length: 26 },
+          (_, i) => String.fromCharCode(97 + i) // 97 = 'a'
+        ).filter((c) => c !== "x")
+      );
+
       try {
-        await query(
-          `INSERT INTO session (session_id, username , created_at) VALUES (?, ?, ?);`,
-          [sessionId, username, now]
+        const bingoResult: any = await query(
+          `INSERT INTO bingo (seed, punch) VALUES (?, ?);`,
+          [JSON.stringify(seed), JSON.stringify([])]
         );
+        const bingoId = bingoResult.insertId ?? bingoResult.lastInsertId;
+        if (typeof bingoId !== "number") {
+          throw new Error("INSERT bingo returned no insert id");
+        }
+
+        await query(`INSERT INTO user (name, bingo_id) VALUES (?, ?);`, [
+          userName,
+          bingoId.toString(),
+        ]);
+
+        return json({ message: "ユーザー登録成功" });
       } catch (e) {
         return json(
           {
-            error: "ログイン失敗",
-            sessionId: sessionId,
-            username: username,
-            datetime: now,
+            error: "DB 操作に失敗しました",
             errormessage: (e as Error).message,
           },
           500
@@ -41,7 +52,7 @@ export default async function handler(req: Request): Promise<Response> {
       } finally {
         await close();
       }
-      return json({ message: "ログイン成功", sessionId: sessionId });
+      return json({ message: "ユーザー登録成功" });
     } catch (_) {
       return json({ error: "Invalid request" }, 400);
     }
