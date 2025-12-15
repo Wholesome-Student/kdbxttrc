@@ -35,12 +35,20 @@ export default async function handler(req: Request): Promise<Response> {
           throw new Error("INSERT bingo returned no insert id");
         }
 
-        await query(`INSERT INTO user (name, bingo_id) VALUES (?, ?);`, [
-          userName,
-          bingoId.toString(),
-        ]);
+        const userResult = await query(
+          `INSERT INTO user (name, bingo_id) VALUES (?, ?);`,
+          [userName, bingoId.toString()]
+        );
 
-        return json({ message: "ユーザー登録成功" });
+        const userId = userResult.insertId ?? userResult.lastInsertId;
+        if (typeof userId !== "number") {
+          throw new Error("INSERT user returned no insert id");
+        }
+
+        return json({
+          message: "ユーザー登録成功",
+          userId,
+        });
       } catch (e) {
         return json(
           {
@@ -52,7 +60,6 @@ export default async function handler(req: Request): Promise<Response> {
       } finally {
         await close();
       }
-      return json({ message: "ユーザー登録成功" });
     } catch (_) {
       return json({ error: "Invalid request" }, 400);
     }

@@ -33,11 +33,9 @@ CREATE TABLE IF NOT EXISTS `correct_answer` (
 
 CREATE TABLE IF NOT EXISTS `choice` (
   id INT AUTO_INCREMENT,
-  question_id INT NOT NULL,
   content VARCHAR(255) NOT NULL,
 
-  PRIMARY KEY (id),
-  KEY idx_choice_question (question_id)
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `user_answer` (
@@ -54,9 +52,6 @@ CREATE TABLE IF NOT EXISTS `user_answer` (
   KEY idx_user_answer_choice (choice_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE `choice`
-  ADD CONSTRAINT fk_choice_question FOREIGN KEY (question_id) REFERENCES `question`(id) ON DELETE CASCADE ON UPDATE CASCADE;
-
 ALTER TABLE `correct_answer`
   ADD CONSTRAINT fk_correct_question FOREIGN KEY (question_id) REFERENCES `question`(id) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT fk_correct_choice   FOREIGN KEY (choice_id)   REFERENCES `choice`(id)   ON DELETE CASCADE ON UPDATE CASCADE;
@@ -71,3 +66,10 @@ ALTER TABLE `user`
 
 ALTER USER 'kbtxdb'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 FLUSH PRIVILEGES;
+
+INSERT INTO `choice` (content) VALUES
+  ('A'), ('B'), ('C'), ('D'), ('E'),
+  ('F'), ('G'), ('H'), ('I'), ('J'),
+  ('K'), ('L'), ('M'), ('N'), ('O'),
+  ('P'), ('Q'), ('R'), ('S'), ('T'),
+  ('U'), ('V'), ('W'), ('Y'), ('Z');
