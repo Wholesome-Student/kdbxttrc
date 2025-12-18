@@ -76,12 +76,19 @@ h1 {
   box-shadow: 0 4px 16px rgba(124,58,237,0.10);
   border-color: var(--accent-2);
 }
-.cell.checked {
+.cell.selected {
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   color: #fff;
   box-shadow: 0 6px 18px rgba(37,99,235,0.18);
   border-color: var(--accent-2);
   text-shadow: 0 2px 8px rgba(37,99,235,0.18);
+}
+.cell.punched {
+  background: linear-gradient(90deg, #f67b2a, #f8d163);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(16,185,129,0.18);
+  border-color: #ba4d04;
+  text-shadow: 0 2px 8px rgba(16,185,129,0.18);
 }
 .cell:active {
   opacity: 0.92;

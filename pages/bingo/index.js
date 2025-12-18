@@ -3,41 +3,48 @@ const SIZE = 5;
 const app = document.getElementById("app");
 if (!app) throw new Error("app not found");
 
-// 1〜75からランダムに25個選ぶ（簡易版）
-function generateNumbers() {
-  const nums = Array.from({ length: 75 }, (_, i) => i + 1);
-  nums.sort(() => Math.random() - 0.5);
-  return nums.slice(0, SIZE * SIZE);
-}
-
-const numbers = generateNumbers();
-
 // コンテナ
 const board = document.createElement("table");
 board.className = "bingo";
 
-// セルを生成
-for (let row = 0; row < SIZE; row++) {
-  const tr = document.createElement("tr");
-  board.appendChild(tr);
-  for (let col = 0; col < SIZE; col++) {
-    const cell = document.createElement("td");
-    cell.className = "cell";
-    const number = numbers[row * SIZE + col];
-    cell.textContent = String(number);
+const res = await fetch("/api/quiz/user-status?user_id=1");
 
-    // 真ん中を FREE にする
-    if (row === Math.floor(SIZE / 2) && col === Math.floor(SIZE / 2)) {
-      cell.textContent = "FREE";
-      cell.classList.add("checked");
+if (!res.ok) {
+  app.appendChild(
+    document.createTextNode(
+      "ビンゴカードの取得に失敗しました、リロードしてください",
+    ),
+  );
+} else {
+  let selectedCell = null;
+  const userStatus = await res.json();
+  // セルを生成
+  for (let row = 0; row < SIZE; row++) {
+    const tr = document.createElement("tr");
+    board.appendChild(tr);
+    for (let col = 0; col < SIZE; col++) {
+      const cell = document.createElement("td");
+      cell.className = "cell";
+      const number = userStatus.bingo.seed[row * SIZE + col];
+      // TODO: IDが返ってくるようにサーバー側が修正されたら、こっちも修正する
+      cell.textContent = String(number);
+
+      // すでに空いているマスへの処理
+      if (userStatus.bingo.punch.includes(number)) {
+        cell.classList.add("punched");
+      } else {
+        // クリックで選択 & もし他のマスを選択済みなら切り替える
+        cell.addEventListener("click", () => {
+          if (selectedCell !== null) {
+            selectedCell.classList.remove("selected");
+          }
+          cell.classList.add("selected");
+          selectedCell = cell;
+        });
+      }
+
+      tr.appendChild(cell);
     }
-
-    // クリックでON/OFF
-    cell.addEventListener("click", () => {
-      cell.classList.toggle("checked");
-    });
-
-    tr.appendChild(cell);
   }
 }
 
