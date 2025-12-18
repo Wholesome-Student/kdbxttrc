@@ -7,12 +7,18 @@ export default async function handler(req: Request): Promise<Response> {
         req.headers.get("content-type") || ""
       ).toLowerCase();
 
-      if (!contentType.includes("x-www-form-urlencoded")) {
+      let userName: string | undefined;
+
+      if (contentType.includes("application/json")) {
+        const body = await req.json().catch(() => null);
+        if (body && typeof body === "object") {
+          userName = (body as any)["user_name"] ?? (body as any)["userName"];
+          if (typeof userName === "string") userName = userName.toString();
+        }
+      } else {
         return json({ error: `Unsupported content type, ${contentType}` }, 400);
       }
 
-      const data = await req.formData().catch(() => null);
-      const userName: string | undefined = data?.get("user_name")?.toString();
       if (userName === undefined || userName.trim() === "") {
         return json({ error: "ユーザー名は必須です" }, 400);
       }
