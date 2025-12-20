@@ -23,13 +23,8 @@ export default async function handler(req: Request): Promise<Response> {
         return json({ error: "ユーザー名は必須です" }, 400);
       }
 
-      // 'a'~'z'までの配列を作成してランダムにシャッフルする
-      const seed = shuffleArray(
-        Array.from(
-          { length: 26 },
-          (_, i) => String.fromCharCode(97 + i) // 97 = 'a'
-        ).filter((c) => c !== "x")
-      );
+      // 0~24までの配列を作成してランダムにシャッフルする
+      const seed = shuffleArray(Array.from({ length: 25 }, (_, i) => i));
 
       try {
         const bingoResult: any = await query(
