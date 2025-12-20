@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `user` (
   id INT AUTO_INCREMENT,
   name VARCHAR(255) NOT NULL UNIQUE,
@@ -73,3 +75,16 @@ INSERT INTO `choice` (content) VALUES
   ('K'), ('L'), ('M'), ('N'), ('O'),
   ('P'), ('Q'), ('R'), ('S'), ('T'),
   ('U'), ('V'), ('W'), ('Y'), ('Z');
+
+INSERT INTO `question` (content) VALUES
+  ('アルファベットの最初の文字は？'),
+  ('ローマ数字として使われているアルファベットは？');
+
+INSERT INTO `correct_answer` (question_id, choice_id) VALUES
+  (1, 1),  -- 'A'
+  (2, 9),  -- 'I'
+  (2, 22), -- 'V'
+  (2, 12), -- 'L'
+  (2, 3),  -- 'C'
+  (2, 4),  -- 'D'
+  (2, 13); -- 'M'

@@ -23,6 +23,7 @@ async function ensureClient(): Promise<Client> {
     password: DB_PASS,
     db: DB_NAME || undefined,
     port: DB_PORT,
+    charset: "utf8mb4",
   });
 
   return client;
