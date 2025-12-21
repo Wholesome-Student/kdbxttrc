@@ -27,10 +27,12 @@ if (!res.ok) {
     board.appendChild(tr);
     for (let col = 0; col < SIZE; col++) {
       const cell = document.createElement("td");
-      cell.className = "cell";
+      cell.classList.add("cell");
       const number = userStatus.bingo.seed[row * SIZE + col];
-      // TODO: IDが返ってくるようにサーバー側が修正されたら、こっちも修正する
-      cell.textContent = String(number);
+      cell.dataset.choiceId = number;
+      cell.textContent = String(
+        userStatus.choices[number] ?? "？",
+      );
 
       // すでに空いているマスへの処理
       if (userStatus.bingo.punch.includes(number)) {
