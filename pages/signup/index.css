@@ -41,7 +41,7 @@ form {
 }
 
 /* 入力 */
-#login-username {
+#signup-username {
   padding: 12px 14px;
   font-size: 16px;
   border-radius: 10px;
@@ -52,17 +52,17 @@ form {
   transition: box-shadow 180ms ease, border-color 180ms ease, transform 120ms ease;
   box-shadow: 0 1px 2px rgba(2,6,23,0.04);
 }
-#login-username::placeholder {
+#signup-username::placeholder {
   color: var(--muted);
 }
-#login-username:focus {
+#signup-username:focus {
   border-color: rgba(37,99,235,0.9);
   box-shadow: 0 6px 18px rgba(37,99,235,0.12);
   transform: translateY(-1px);
 }
 
 /* ユーザー名ラベル */
-label[for="login-username"] {
+label[for="signup-username"] {
   font-size: 15px;
   font-weight: 500;
   color: var(--accent);
@@ -71,12 +71,12 @@ label[for="login-username"] {
   display: block;
   transition: color 180ms;
 }
-form:focus-within label[for="login-username"] {
+form:focus-within label[for="signup-username"] {
   color: var(--accent-2);
 }
 
 /* ボタン */
-#login-submit {
+#signup-submit {
   padding: 12px 14px;
   font-size: 16px;
   border-radius: 10px;
@@ -88,11 +88,11 @@ form:focus-within label[for="login-username"] {
   transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
   box-shadow: 0 8px 20px rgba(37,99,235,0.18);
 }
-#login-submit:hover {
+#signup-submit:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 34px rgba(37,99,235,0.18);
 }
-#login-submit:active {
+#signup-submit:active {
   transform: translateY(0);
   opacity: 0.96;
 }

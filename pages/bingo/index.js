@@ -7,7 +7,10 @@ if (!app) throw new Error("app not found");
 const board = document.createElement("table");
 board.className = "bingo";
 
-const res = await fetch("/api/quiz/user-status?user_id=1");
+const userId = globalThis.localStorage.getItem("userId");
+const res = await fetch(
+  `/api/quiz/user-status?user_id=${encodeURIComponent(userId)}`,
+);
 
 if (!res.ok) {
   app.appendChild(
