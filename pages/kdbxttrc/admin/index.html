@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>kdbxttrc Admin</title>
+
+    <link rel="stylesheet" href="/kdbxttrc/admin/index.css" />
+    <script src="/kdbxttrc/admin/index.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__inner">
+        <div>
+          <div class="title">kdbxttrc Admin</div>
+        </div>
+        <div class="topbar__actions">
+          <button id="refreshBtn" class="btn btn--ghost" type="button">
+            更新
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="grid">
+        <div class="card">
+          <div class="card__header">
+            <h2>Start</h2>
+            <p class="muted">POST /api/admin/start</p>
+          </div>
+
+          <form id="startForm" class="form">
+            <label class="field">
+              <span class="field__label">question id</span>
+              <input
+                name="questionId"
+                class="input"
+                type="number"
+                min="1"
+                step="1"
+                value="1"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span class="field__label">round</span>
+              <input
+                name="round"
+                class="input"
+                type="number"
+                min="1"
+                step="1"
+                value="1"
+                required
+              />
+            </label>
+
+            <div class="row">
+              <button id="startBtn" class="btn btn--primary" type="submit">
+                開始する
+              </button>
+              <button id="startDefaultsBtn" class="btn" type="button">
+                デフォルトで開始
+              </button>
+            </div>
+
+            <div id="startStatus" class="status" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <h2>State</h2>
+            <p class="muted">GET /api/admin/state</p>
+          </div>
+
+          <div class="row row--wrap">
+            <label class="toggle">
+              <input id="pollToggle" type="checkbox" checked />
+              <span>自動更新 (2s)</span>
+            </label>
+          </div>
+
+          <div class="state">
+            <div id="stateBadge" class="badge">unknown</div>
+            <pre id="stateJson" class="json">---</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
