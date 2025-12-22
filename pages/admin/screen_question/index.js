@@ -5,19 +5,22 @@ const timeElem = document.getElementById("time");
 const timerRowElem = document.getElementById("timer-row");
 const otherContentElem = document.getElementById("otherContent");
 const answerAreaElem = document.getElementById("answerArea");
+const questionAreaElem = document.getElementById("questionAreaMain");
+const qrImageElem = document.getElementById("qrImage");
+const errorArea = document.getElementById("errorArea");
+let enterHandled = false;
 
 async function fetchAndShowMockQuestion() {
-  const errorArea = document.getElementById("errorArea");
-  errorArea.textContent = "";
-
   const url = "/api/quiz/polling";
-  const res = await fetch(url);
-  if (!res.ok) {
-    errorArea.textContent = `APIエラー: ${res.status}`;
-    return;
-  }
-
   try {
+    const res = await fetch(url);
+  
+    if (!res.ok) {
+      errorArea.textContent = `APIエラー: ${res.status}`;
+      return;
+    }
+    errorArea.textContent = "";
+
     const data = (await res.json());
 
     if(data.status == "standby" || data.status == "closed" || data.status == "finished") {
@@ -60,11 +63,20 @@ async function fetchAndShowMockQuestion() {
       }
     }
   } catch (e) {
-    errorArea.textContent = `通信エラー: ${e}`;
+    errorArea.textContent = `APIエラー: ${e}`;
+    return;
   }
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  fetchAndShowMockQuestion();
-  setInterval(fetchAndShowMockQuestion, 1000);
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter' && !enterHandled) {
+      enterHandled = true;
+      questionAreaElem.style.display = "block";
+      answerAreaElem.style.display = "block";
+      qrImageElem.style.display = "none";
+      fetchAndShowMockQuestion();
+      setInterval(fetchAndShowMockQuestion, 1000);
+    }
+  });
 });
