@@ -6,6 +6,7 @@ if (!app) throw new Error("app not found");
 // コンテナ
 const board = document.createElement("table");
 board.className = "bingo";
+let selectedCell = null;
 
 const userId = globalThis.localStorage.getItem("userId");
 const res = await fetch(
@@ -19,7 +20,6 @@ if (!res.ok) {
     ),
   );
 } else {
-  let selectedCell = null;
   const userStatus = await res.json();
   // セルを生成
   for (let row = 0; row < SIZE; row++) {
@@ -37,22 +37,21 @@ if (!res.ok) {
       // すでに空いているマスへの処理
       if (userStatus.bingo.punch.includes(number)) {
         cell.classList.add("punched");
-      } else {
-        // クリックで選択 & もし他のマスを選択済みなら切り替える
-        cell.addEventListener("click", () => {
-          if (selectedCell !== null) {
-            selectedCell.classList.remove("selected");
-          }
-          cell.classList.add("selected");
-          selectedCell = cell;
-        });
       }
-
       tr.appendChild(cell);
     }
   }
 }
 app.appendChild(board);
+
+const toggleSelected = (event) => {
+  if (selectedCell !== null) {
+    selectedCell.classList.remove("selected");
+  }
+  const cell = event.target;
+  cell.classList.add("selected");
+  selectedCell = cell;
+};
 
 function createTask(triggeredAtMs, callback) {
   const now = Date.now();
@@ -87,6 +86,12 @@ async function poll() {
         const data = json.data;
         statusDiv.innerHTML = `第${data.round}問<br>${data.question.context}`;
         nextEndedAtMs = data.ended_at * 1000;
+        // セルクリックイベントを設定
+        const cells = document.querySelectorAll(".cell");
+        cells.forEach((cell) => {
+          cell.removeEventListener("click", toggleSelected);
+          cell.addEventListener("click", toggleSelected);
+        });
         // 終了時刻になったら回答を送信するタスクをセット
         createTask(nextEndedAtMs, () => {
           try {
@@ -115,6 +120,11 @@ async function poll() {
         statusDiv.className = "closed";
         statusDiv.textContent =
           "回答が締め切られました。結果発表までお待ちください。";
+        // セルのクリックイベントを解除
+        const cells = document.querySelectorAll(".cell");
+        cells.forEach((cell) => {
+          cell.removeEventListener("click", toggleSelected);
+        });
       } else if (json.status === "result") {
         // 結果発表中
         if (resultDisplayed) {
