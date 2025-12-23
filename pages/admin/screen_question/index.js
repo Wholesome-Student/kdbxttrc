@@ -18,19 +18,23 @@ async function fetchAndShowMockQuestion() {
   }
 
   try {
-    const data = (await res.json());
+    const data = await res.json();
 
-    if(data.status == "standby" || data.status == "closed" || data.status == "finished") {
+    if (
+      data.status == "standby" ||
+      data.status == "closed" ||
+      data.status == "finished"
+    ) {
       questionNumberElem.textContent = "";
       questionContentElem.textContent = "";
       timerRowElem.style.display = "none";
       answerAreaElem.style.display = "none";
-      if(data.status == "standby") {
-          otherContentElem.textContent = "問題";
-      } else if(data.status == "closed") {
-          otherContentElem.textContent = "集計中";
-      } else if(data.status == "finished") {
-          otherContentElem.textContent = "終了";
+      if (data.status == "standby") {
+        otherContentElem.textContent = "問題";
+      } else if (data.status == "closed") {
+        otherContentElem.textContent = "集計中";
+      } else if (data.status == "finished") {
+        otherContentElem.textContent = "終了";
       }
     } else {
       const data2 = data.data;
@@ -38,10 +42,12 @@ async function fetchAndShowMockQuestion() {
       questionContentElem.textContent = data2.question.context;
       otherContentElem.textContent = "";
 
-      if(data.status == "active") {
-          timeElem.textContent = String(Math.max(0, Math.floor((data2.ended_at - Date.now()) / 1000))).padStart(2, '0');
-          timerRowElem.style.display = "flex";
-          answerAreaElem.style.display = "none";
+      if (data.status == "active") {
+        timeElem.textContent = String(
+          Math.max(0, Math.floor((data2.ended_at - Date.now()) / 1000))
+        ).padStart(2, "0");
+        timerRowElem.style.display = "flex";
+        answerAreaElem.style.display = "none";
       } else {
         timeElem.textContent = "";
         timerRowElem.style.display = "none";
@@ -50,9 +56,9 @@ async function fetchAndShowMockQuestion() {
         let answersListString = "";
         for (let i = 0; i < data2.correct_choice.length; i++) {
           answersListString += data2.correct_choice[i].context;
-          if(i % 13 == 12) {
+          if (i % 13 == 12) {
             answersListString += "\n";
-          }else if(i != data2.correct_choice.length - 1) {
+          } else if (i != data2.correct_choice.length - 1) {
             answersListString += ", ";
           }
         }
