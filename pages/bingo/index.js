@@ -82,6 +82,7 @@ async function poll() {
         statusDiv.textContent = "次の問題が始まるまでお待ちください...";
       } else if (json.status === "active") {
         // クイズ出題中
+        resultDisplayed = false;
         statusDiv.className = "active";
         const data = json.data;
         statusDiv.innerHTML = `第${data.round}問<br>${data.question.context}`;
