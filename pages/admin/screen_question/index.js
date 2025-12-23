@@ -44,7 +44,7 @@ async function fetchAndShowMockQuestion() {
 
       if (data.status == "active") {
         timeElem.textContent = String(
-          Math.max(0, Math.floor((data2.ended_at - Date.now()) / 1000))
+          Math.max(0, Math.floor(data2.ended_at - Date.now() / 1000))
         ).padStart(2, "0");
         timerRowElem.style.display = "flex";
         answerAreaElem.style.display = "none";
