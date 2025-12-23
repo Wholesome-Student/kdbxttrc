@@ -1,5 +1,6 @@
 const API_START = "/api/admin/start";
 const API_STATE = "/api/admin/state";
+const API_RESET = "/api/admin/reset";
 
 const el = (id) => {
   const e = document.getElementById(id);
@@ -127,6 +128,23 @@ async function startQuiz(payloadOrNull) {
   }
 }
 
+async function resetQuiz() {
+  const resetBtn = el("resetBtn");
+  const startStatusEl = el("startStatus");
+
+  resetBtn.disabled = true;
+  setStatus(startStatusEl, null, "リセット中…");
+
+  try {
+    const data = await fetchJson(API_RESET, { method: "POST" });
+    setStatus(startStatusEl, "ok", "リセットしました");
+  } catch (e) {
+    setStatus(startStatusEl, "err", `リセット失敗: ${String(e?.message || e)}`);
+  } finally {
+    resetBtn.disabled = false;
+  }
+}
+
 function parseStartForm() {
   const form = el("startForm");
   const fd = new FormData(form);
@@ -166,6 +184,10 @@ function main() {
 
   el("startDefaultsBtn").addEventListener("click", () => {
     startQuiz(null);
+  });
+
+  el("resetBtn").addEventListener("click", () => {
+    resetQuiz();
   });
 
   const pollToggle = el("pollToggle");
