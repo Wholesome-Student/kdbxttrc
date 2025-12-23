@@ -10,14 +10,14 @@ let selectedCell = null;
 
 const userId = globalThis.localStorage.getItem("userId");
 const res = await fetch(
-  `/api/quiz/user-status?user_id=${encodeURIComponent(userId)}`,
+  `/api/quiz/user-status?user_id=${encodeURIComponent(userId)}`
 );
 
 if (!res.ok) {
   app.appendChild(
     document.createTextNode(
-      "ビンゴカードの取得に失敗しました、リロードしてください",
-    ),
+      "ビンゴカードの取得に失敗しました、リロードしてください"
+    )
   );
 } else {
   const userStatus = await res.json();
@@ -30,9 +30,7 @@ if (!res.ok) {
       cell.classList.add("cell");
       const number = userStatus.bingo.seed[row * SIZE + col];
       cell.dataset.choiceId = number + 1;
-      cell.textContent = String(
-        userStatus.choices[number] ?? "？",
-      );
+      cell.textContent = String(userStatus.choices[number] ?? "？");
 
       // すでに空いているマスへの処理
       if (userStatus.bingo.punch.includes(number)) {
@@ -53,21 +51,25 @@ const toggleSelected = (event) => {
   selectedCell = cell;
 };
 
-function createTask(triggeredAtMs, callback) {
-  const now = Date.now();
-  const delay = triggeredAtMs - now;
-  if (delay <= 0) {
-    callback();
-    return;
+// 長時間の setTimeout に依存すると、ブラウザがバックグラウンド時に
+// タイマーをスロットリングしてしまい、復帰時にタイマーがまとめて発火
+// して一斉にリクエストが飛ぶ問題がある。そこで long wait は短い間隔で
+// 監視する方式に変更する。
+async function waitUntil(triggeredAtMs) {
+  while (!stopped) {
+    const now = Date.now();
+    const rem = triggeredAtMs - now;
+    if (rem <= 0) return;
+    // 最大で 1 秒単位で繰り返しチェックする（スロットリングの影響を受けにくい）
+    await sleep(Math.min(1000, rem));
   }
-
-  setTimeout(callback, delay);
 }
 
 // 以下ポーリング関連処理
 
 let nextEndedAtMs = null;
 let resultDisplayed = false;
+let stopped = false; // ページ離脱時や停止制御用フラグ
 const statusDiv = document.getElementById("status");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -93,29 +95,27 @@ async function poll() {
           cell.removeEventListener("click", toggleSelected);
           cell.addEventListener("click", toggleSelected);
         });
-        // 終了時刻になったら回答を送信するタスクをセット
-        createTask(nextEndedAtMs, () => {
-          try {
-            const selectedCell = document.querySelector(".cell.selected");
-            fetch("/api/quiz/answer", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                user_id: Number(userId),
-                question_id: data.question.id,
-                choice_id: selectedCell
-                  ? Number(selectedCell.dataset.choiceId)
-                  : null,
-              }),
-            });
-          } catch (e) {
-            console.error("回答の送信に失敗:", e);
-          }
-          poll(); // ポーリングを再開
-        });
-        break; // ポーリング停止
+        await waitUntil(nextEndedAtMs);
+
+        if (stopped) return;
+
+        try {
+          const selectedCell = document.querySelector(".cell.selected");
+          const resp = await fetch("/api/quiz/answer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: Number(userId),
+              question_id: data.question.id,
+              choice_id: selectedCell
+                ? Number(selectedCell.dataset.choiceId)
+                : null,
+            }),
+          });
+          if (!resp.ok) console.error("Answer POST failed", resp.status);
+        } catch (e) {
+          console.error("回答の送信に失敗:", e);
+        }
       } else if (json.status === "closed") {
         // 回答締め切り・集計中
         statusDiv.className = "closed";
@@ -134,17 +134,17 @@ async function poll() {
         }
         statusDiv.className = "result";
         const data = json.data;
-        const contextList = [...data.correct_choice].sort((a, b) => a.id - b.id)
+        const contextList = [...data.correct_choice]
+          .sort((a, b) => a.id - b.id)
           .map((obj) => obj.context);
-        statusDiv.innerHTML =
-          `第${data.round}問<br>${data.question.context}<br>正解: ${
-            contextList.join(" ")
-          }`;
+        statusDiv.innerHTML = `第${data.round}問<br>${
+          data.question.context
+        }<br>正解: ${contextList.join(" ")}`;
         const selectedCell = document.querySelector(".cell.selected");
         if (
           selectedCell &&
-          data.correct_choice.find((obj) =>
-            obj.id === Number(selectedCell.dataset.choiceId)
+          data.correct_choice.find(
+            (obj) => obj.id === Number(selectedCell.dataset.choiceId)
           )
         ) {
           const ans = selectedCell.textContent;
