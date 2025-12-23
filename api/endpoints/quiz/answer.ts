@@ -24,7 +24,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: "Missing question_id in request body" }, 400);
   }
   if (!choiceId) {
-    return json({ error: "Missing choice_id in request body" }, 400);
+    return json({ ok: true }, 200);
   }
 
   try {
