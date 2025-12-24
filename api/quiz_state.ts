@@ -89,40 +89,121 @@ export function setQuizState(state: QuizState): void {
     autoTransitionTimer = setTimeout(async () => {
       const s = currentState;
 
-      const correctAnswerRows = await query(
-        "SELECT choice_id FROM correct_answer WHERE question_id = ?;",
-        [String(s.question.id)]
-      );
+      if (!hasDbConfig()) {
+        // DB設定がない場合は punch 計算をスキップしてそのまま result へ
+        const resultState: QuizState = {
+          status: "result",
+          question: s.question,
+          round: s.round,
+          correctChoices: [],
+        };
+        setQuizState(resultState);
+        return;
+      }
 
-      const correctIds = (correctAnswerRows || [])
-        .map((r: any) => Number(r.choice_id))
-        .filter((id) => Number.isFinite(id));
+      try {
+        // 1. 正答となる choice_id を取得
+        const correctAnswerRows = await query(
+          "SELECT choice_id FROM correct_answer WHERE question_id = ?;",
+          [String(s.question.id)]
+        );
 
-      let correctChoices: { id: number; context: string }[] = [];
+        const correctIds = (correctAnswerRows || [])
+          .map((r: any) => Number(r.choice_id))
+          .filter((id) => Number.isFinite(id));
 
-      if (correctIds.length > 0 && hasDbConfig()) {
-        try {
+        // 2. 各ユーザーの回答を取得し、正解かどうか判定
+        if (correctIds.length > 0) {
           const placeholders = correctIds.map(() => "?").join(",");
+
+          // user_answer からこの問題に対する各ユーザーの選択を取得
+          const answerRows = await query(
+            "SELECT ua.user_id, ua.choice_id, u.bingo_id FROM user_answer ua JOIN `user` u ON ua.user_id = u.id WHERE ua.question_id = ?;",
+            [String(s.question.id)]
+          );
+
+          // 3. 正解しているユーザーに対して punch(JSON配列) に question.id を追加
+          const winners: { user_id: number; bingo_id: number }[] = [];
+
+          for (const r of answerRows || []) {
+            const choiceId = Number(r.choice_id);
+            if (!Number.isFinite(choiceId)) continue;
+            if (correctIds.includes(choiceId)) {
+              winners.push({
+                user_id: Number(r.user_id),
+                bingo_id: Number(r.bingo_id),
+              });
+            }
+          }
+
+          // bingo ごとに punch を更新
+          for (const w of winners) {
+            const bingoRows = await query(
+              "SELECT punch FROM bingo WHERE id = ? FOR UPDATE;",
+              [String(w.bingo_id)]
+            );
+
+            let punch: number[] = [];
+            if (bingoRows && bingoRows.length > 0) {
+              try {
+                const raw = (bingoRows[0] as any).punch;
+                if (typeof raw === "string") {
+                  punch = JSON.parse(raw);
+                } else if (Array.isArray(raw)) {
+                  punch = raw
+                    .map((v: unknown) => Number(v))
+                    .filter((v) => Number.isFinite(v));
+                }
+              } catch {
+                punch = [];
+              }
+            }
+
+            // 既に含まれていない場合のみ追加（0-index で保存するため -1 して保存）
+            const punchedIndex = s.question.id - 1;
+            if (!punch.includes(punchedIndex)) {
+              punch.push(punchedIndex);
+            }
+
+            await query("UPDATE bingo SET punch = ? WHERE id = ?;", [
+              JSON.stringify(punch),
+              String(w.bingo_id),
+            ]);
+          }
+        }
+
+        // 4. 結果表示用に正解選択肢の内容を取得
+        let correctChoices: { id: number; context: string }[] = [];
+
+        if (correctIds.length > 0) {
+          const placeholders2 = correctIds.map(() => "?").join(",");
           const rows = await query(
-            `SELECT id, content FROM choice WHERE id IN (${placeholders});`,
+            `SELECT id, content FROM choice WHERE id IN (${placeholders2});`,
             correctIds.map(String)
           );
           correctChoices = (rows || []).map((r: any) => ({
             id: Number(r.id),
             context: r.content,
           }));
-        } catch {
-          correctChoices = [];
         }
-      }
 
-      const resultState: QuizState = {
-        status: "result",
-        question: s.question,
-        round: s.round,
-        correctChoices,
-      };
-      setQuizState(resultState);
+        const resultState: QuizState = {
+          status: "result",
+          question: s.question,
+          round: s.round,
+          correctChoices,
+        };
+        setQuizState(resultState);
+      } catch {
+        // 何かあった場合もとりあえず result へ遷移
+        const fallbackState: QuizState = {
+          status: "result",
+          question: s.question,
+          round: s.round,
+          correctChoices: [],
+        };
+        setQuizState(fallbackState);
+      }
     }, delayMs) as unknown as number;
   } else if (state.status === "result") {
     // 表示時間: 5秒
