@@ -1,11 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Minimal Deno HTML</title>
-  </head>
-  <body>
-    <h1>Deno + HTML</h1>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/signup/index.css">
+    <title>ログイン</title>
+</head>
+<body>
+    <form id="signup-form" method="post" action="/api/signup">
+        <label for="signup-username">ユーザー名:</label>
+        <input id="signup-username" type="text" name="username">
+        <button id="signup-submit" type="submit">ログイン</button>
+    </form>
+    <script>
+        document.getElementById("signup-form").addEventListener("submit", async () => {
+            event.preventDefault();
+            const username = document.getElementById("signup-username").value;
+            const res = await fetch("/api/signup", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ user_name: username }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                window.localStorage.setItem("userId", data.userId);
+                window.location.href = "/bingo";
+            } else {
+                alert("サインアップに失敗しました。");
+            }
+        });
+    </script>
+</body>
 </html>
