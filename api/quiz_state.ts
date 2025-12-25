@@ -146,8 +146,12 @@ export function setQuizState(state: QuizState): void {
             [String(s.question.id)]
           );
 
-          // 3. 正解しているユーザーに対して punch(JSON配列) に question.id を追加
-          const winners: { user_id: number; bingo_id: number }[] = [];
+          // 3. 正解しているユーザーに対して punch(JSON配列) に choice_id 由来のインデックスを追加
+          const winners: {
+            user_id: number;
+            bingo_id: number;
+            choice_id: number;
+          }[] = [];
 
           for (const r of answerRows || []) {
             const choiceId = Number(r.choice_id);
@@ -156,6 +160,7 @@ export function setQuizState(state: QuizState): void {
               winners.push({
                 user_id: Number(r.user_id),
                 bingo_id: Number(r.bingo_id),
+                choice_id: choiceId,
               });
             }
           }
@@ -183,8 +188,8 @@ export function setQuizState(state: QuizState): void {
               }
             }
 
-            // 既に含まれていない場合のみ追加（0-index で保存するため -1 して保存）
-            const punchedIndex = s.question.id - 1;
+            // 既に含まれていない場合のみ追加（choice_id を 0-index のマス位置として保存）
+            const punchedIndex = w.choice_id - 1;
             if (!punch.includes(punchedIndex)) {
               punch.push(punchedIndex);
             }
