@@ -115,3 +115,9 @@ form:focus-within label[for="signup-username"] {
     transition: none !important;
   }
 }
+
+.error {
+  color: red;
+  font-size: 14px;
+  margin-top: 4px;
+}

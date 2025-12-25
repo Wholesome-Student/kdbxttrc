@@ -11,13 +11,18 @@
       <label for="signup-username">ユーザー名:</label>
       <input id="signup-username" type="text" name="username" />
       <button id="signup-submit" type="submit">ログイン</button>
+      <p id="signup-error" class="error" aria-live="polite"></p>
     </form>
     <script>
-      document
-        .getElementById("signup-form")
-        .addEventListener("submit", async () => {
-          event.preventDefault();
-          const username = document.getElementById("signup-username").value;
+      const form = document.getElementById("signup-form");
+      const errorEl = document.getElementById("signup-error");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        errorEl.textContent = "";
+
+        const username = document.getElementById("signup-username").value;
+        try {
           const res = await fetch("/api/signup", {
             method: "POST",
             headers: {
@@ -25,14 +30,26 @@
             },
             body: JSON.stringify({ user_name: username }),
           });
+
+          const ct = res.headers.get("content-type") || "";
+          const isJson = ct.toLowerCase().includes("application/json");
+          const data = isJson ? await res.json().catch(() => null) : null;
+
           if (res.ok) {
-            const data = await res.json();
             window.localStorage.setItem("userId", data.userId);
             window.location.href = "/bingo";
           } else {
-            alert("サインアップに失敗しました。");
+            const msg =
+              (data && typeof data === "object" && data.error) ||
+              (res.status === 409
+                ? "このユーザー名は既に使われています。別の名前を入力してください"
+                : "サインアップに失敗しました。");
+            errorEl.textContent = msg;
           }
-        });
+        } catch (e) {
+          errorEl.textContent = "サインアップ中にエラーが発生しました。通信環境を確認して再度お試しください";
+        }
+      });
     </script>
   </body>
 </html>
