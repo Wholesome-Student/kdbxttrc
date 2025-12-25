@@ -1,30 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/admin/screen_question/index.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/admin/screen_question/index.css" />
     <script src="/admin/screen_question/index.js" defer></script>
     <title>問題</title>
-</head>
-<body>
-    <section id="questionAreaMain" style="display: none;">
-        <div id="questionNumber"></div>
-        <section>
-            <div id="timer-row">
-                <img id="timerImg" src="screen_question/stopwatch-solid-full.svg" style="width: 4rem;">
-                <div id="time"></div>
-            </div>
-            <div id="questionArea">
-                    <div id="questionContent"></div>
-            </div>
-            <pre id="errorArea" style="color:red;"></pre>
-        </section>
-        <div id="otherContent"></div>
+  </head>
+  <body>
+    <section id="questionAreaMain" style="display: none">
+      <div id="questionNumber"></div>
+      <section>
+        <div id="timer-row">
+          <img
+            id="timerImg"
+            src="screen_question/stopwatch-solid-full.svg"
+            style="width: 4rem"
+          />
+          <div id="time"></div>
+        </div>
+        <div id="questionArea">
+          <div id="questionContent"></div>
+        </div>
+        <pre id="errorArea" style="color: red"></pre>
+      </section>
+      <div id="otherContent"></div>
     </section>
-    <section id="answerArea" style="display: none;">
-        <div id="answersContent"></div>
+    <section id="answerArea" style="display: none">
+      <div id="answersContent"></div>
     </section>
-    <img id="qrImage" src="screen_question/screen_qr.png" alt="QRコード" style="display:block;">
-</body>
+    <img
+      id="qrImage"
+      src="screen_question/screen_qr.svg"
+      alt="QRコード"
+      style="display: block"
+    />
+  </body>
 </html>
