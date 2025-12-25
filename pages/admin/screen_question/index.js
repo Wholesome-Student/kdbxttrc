@@ -10,6 +10,7 @@ const qrImageElem = document.getElementById("qrImage");
 const errorArea = document.getElementById("errorArea");
 let enterHandled = false;
 let eventSource = null;
+let countdownTimerId = null;
 
 function updateViewFromData(data) {
   if (
@@ -35,12 +36,41 @@ function updateViewFromData(data) {
     otherContentElem.textContent = "";
 
     if (data.status == "active") {
-      timeElem.textContent = String(
-        Math.max(0, Math.floor(data2.ended_at - Date.now() / 1000))
-      ).padStart(2, "0");
+      // 前回までのカウントダウン interval をクリア
+      if (countdownTimerId !== null) {
+        clearInterval(countdownTimerId);
+        countdownTimerId = null;
+      }
+
+      // サーバー側からは ended_at が「秒」で送られてくる前提
+      const endedAtSec =
+        typeof data2.ended_at === "number" ? data2.ended_at : 0;
+
+      const updateCountdown = () => {
+        const nowSec = Date.now() / 1000;
+        const remainingSec = Math.max(0, Math.floor(endedAtSec - nowSec));
+        timeElem.textContent = String(remainingSec).padStart(2, "0");
+
+        // 0 になったらこれ以上マイナスに行かないように interval を止める
+        if (remainingSec <= 0 && countdownTimerId !== null) {
+          clearInterval(countdownTimerId);
+          countdownTimerId = null;
+        }
+      };
+
+      // 即時に1回更新してから、1秒ごとに更新
+      updateCountdown();
+      countdownTimerId = setInterval(updateCountdown, 1000);
+
       timerRowElem.style.display = "flex";
       answerAreaElem.style.display = "none";
     } else {
+      // active 以外に遷移したらカウントダウンを止める
+      if (countdownTimerId !== null) {
+        clearInterval(countdownTimerId);
+        countdownTimerId = null;
+      }
+
       timeElem.textContent = "";
       timerRowElem.style.display = "none";
       answerAreaElem.style.display = "block";
