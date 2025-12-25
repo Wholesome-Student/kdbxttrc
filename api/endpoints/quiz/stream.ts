@@ -102,10 +102,36 @@ export default function handler(req: Request): Response {
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const encoder = new TextEncoder();
+      let closed = false;
+      const cleanupFns: Array<() => void> = [];
+
+      const safeEnqueue = (chunk: Uint8Array) => {
+        if (closed) return;
+        try {
+          controller.enqueue(chunk);
+        } catch (e) {
+          closed = true;
+          console.error("[SSE] enqueue error", e);
+          // 後始末
+          for (const fn of cleanupFns) {
+            try {
+              fn();
+            } catch (_) {
+              // ignore
+            }
+          }
+          cleanupFns.length = 0;
+          try {
+            controller.close();
+          } catch (_) {
+            // ignore
+          }
+        }
+      };
       const send = (state: QuizState) => {
         const payload = buildStreamResponse(state);
         const chunk = `data: ${JSON.stringify(payload)}\n\n`;
-        controller.enqueue(encoder.encode(chunk));
+        safeEnqueue(encoder.encode(chunk));
       };
 
       // 接続直後に現在の状態を1回送信
@@ -113,28 +139,34 @@ export default function handler(req: Request): Response {
 
       // 状態が変わるたびに送信
       const unsubscribe = subscribeQuizState((state) => {
-        try {
-          send(state);
-        } catch (e) {
-          console.error("[SSE] push error", e);
-        }
+        send(state);
       });
+      cleanupFns.push(unsubscribe);
 
       // プロキシなどに切断されないよう、軽量なハートビートコメントを定期送信
       const heartbeatId = setInterval(() => {
-        try {
-          controller.enqueue(encoder.encode(": heartbeat\n\n"));
-        } catch (e) {
-          console.error("[SSE] heartbeat error", e);
-          clearInterval(heartbeatId);
-          unsubscribe();
+        safeEnqueue(encoder.encode(": heartbeat\n\n"));
+      }, 30_000);
+      cleanupFns.push(() => clearInterval(heartbeatId));
+
+      // クライアント切断などでストリームがキャンセルされたときの後始末
+      controller.signal?.addEventListener?.("abort", () => {
+        if (closed) return;
+        closed = true;
+        for (const fn of cleanupFns) {
           try {
-            controller.close();
+            fn();
           } catch (_) {
             // ignore
           }
         }
-      }, 30_000);
+        cleanupFns.length = 0;
+        try {
+          controller.close();
+        } catch (_) {
+          // ignore
+        }
+      });
     },
   });
 
