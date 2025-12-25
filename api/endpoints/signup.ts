@@ -27,6 +27,22 @@ export default async function handler(req: Request): Promise<Response> {
       const seed = shuffleArray(Array.from({ length: 25 }, (_, i) => i));
 
       try {
+        // 既に同じユーザー名が存在するかをチェック
+        const existingUsers: any[] = await query(
+          `SELECT id FROM user WHERE name = ? LIMIT 1;`,
+          [userName]
+        );
+
+        if (Array.isArray(existingUsers) && existingUsers.length > 0) {
+          return json(
+            {
+              error: "このユーザー名は既に使われています。別の名前を入力してください",
+              code: "DUPLICATE_USER_NAME",
+            },
+            409,
+          );
+        }
+
         const bingoResult: any = await query(
           `INSERT INTO bingo (seed, punch) VALUES (?, ?);`,
           [JSON.stringify(seed), JSON.stringify([])]
@@ -51,10 +67,23 @@ export default async function handler(req: Request): Promise<Response> {
           userId,
         });
       } catch (e) {
+        // DB のユニーク制約違反などでユーザー名重複が検出された場合にも
+        // わかりやすいメッセージを返す
+        const msg = (e as Error).message || "";
+        if (msg.includes("Duplicate entry") && msg.includes("for key 'name'")) {
+          return json(
+            {
+              error: "このユーザー名は既に使われています。別の名前を入力してください",
+              code: "DUPLICATE_USER_NAME",
+            },
+            409,
+          );
+        }
+
         return json(
           {
             error: "DB 操作に失敗しました",
-            errormessage: (e as Error).message,
+            errormessage: msg,
           },
           500
         );
