@@ -260,28 +260,29 @@ async function handleApi(
   return null;
 }
 
-console.log("Starting server on http://localhost:8000");
+await Deno.serve(
+  { port: Number(Deno.env.get("HTTP_PORT") || 8000) },
+  async (req) => {
+    try {
+      const url = new URL(req.url);
+      const rawPath = url.pathname;
+      const pathname = normalizePathname(rawPath);
+      if (pathname === null) {
+        return badRequest("Invalid path");
+      }
 
-await Deno.serve({ port: 8000 }, async (req) => {
-  try {
-    const url = new URL(req.url);
-    const rawPath = url.pathname;
-    const pathname = normalizePathname(rawPath);
-    if (pathname === null) {
-      return badRequest("Invalid path");
+      if (pathname === "/api" || pathname.startsWith("/api/")) {
+        const apiResp = await handleApi(req, pathname);
+        if (apiResp) return apiResp;
+        return notFound();
+      }
+
+      const filePath = await resolvePageFile(pathname);
+      if (!filePath) return notFound();
+      return serveFile(filePath);
+    } catch (err) {
+      console.error("Request handler failed", err);
+      return internalError();
     }
-
-    if (pathname === "/api" || pathname.startsWith("/api/")) {
-      const apiResp = await handleApi(req, pathname);
-      if (apiResp) return apiResp;
-      return notFound();
-    }
-
-    const filePath = await resolvePageFile(pathname);
-    if (!filePath) return notFound();
-    return serveFile(filePath);
-  } catch (err) {
-    console.error("Request handler failed", err);
-    return internalError();
   }
-});
+);
