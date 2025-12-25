@@ -91,7 +91,7 @@ async function startQuiz(payloadOrNull) {
         }
       : { method: "POST" };
 
-  const data = await fetchJson(API_START, opts);
+    const data = await fetchJson(API_START, opts);
     setStatus(startStatusEl, "ok", "開始しました");
 
     // クイズ状態は SSE で自動更新されるため、ここでは明示的な再取得はしない
