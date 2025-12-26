@@ -37,6 +37,24 @@ function setStatus(targetEl, kind, message) {
   targetEl.textContent = message;
 }
 
+async function refreshState() {
+  const stateStatusEl = el("startStatus");
+  const stateJsonEl = el("stateJson");
+
+  try {
+    setStatus(stateStatusEl, null, "状態取得中…");
+    const data = await fetchJson(API_STATE);
+    const state =
+      data && typeof data === "object" && "state" in data ? data.state : data;
+
+    setBadge(state?.status ?? null);
+    stateJsonEl.textContent = prettyJson(state);
+    setStatus(stateStatusEl, "ok", `最終更新: ${nowJstString()}`);
+  } catch (e) {
+    setStatus(stateStatusEl, "err", `状態取得失敗: ${String(e?.message || e)}`);
+  }
+}
+
 async function fetchJson(url, opts = {}) {
   const controller = new AbortController();
   const timeoutMs = 8000;
