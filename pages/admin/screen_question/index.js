@@ -9,90 +9,80 @@ const questionAreaElem = document.getElementById("questionAreaMain");
 const qrImageElem = document.getElementById("qrImage");
 const errorArea = document.getElementById("errorArea");
 let enterHandled = false;
-let eventSource = null;
 
-function updateViewFromData(data) {
-  if (
-    data.status == "standby" ||
-    data.status == "closed" ||
-    data.status == "finished"
-  ) {
-    questionNumberElem.textContent = "";
-    questionContentElem.textContent = "";
-    timerRowElem.style.display = "none";
-    answerAreaElem.style.display = "none";
-    if (data.status == "standby") {
-      otherContentElem.textContent = "問題";
-    } else if (data.status == "closed") {
-      otherContentElem.textContent = "集計中";
-    } else if (data.status == "finished") {
-      otherContentElem.textContent = "終了";
+async function fetchAndShowMockQuestion() {
+  const url = "/api/quiz/polling";
+  try {
+    const res = await fetch(url);
+  
+    if (!res.ok) {
+      errorArea.textContent = `APIエラー: ${res.status}`;
+      return;
     }
-  } else {
-    const data2 = data.data;
-    questionNumberElem.textContent = data2.round + "問目";
-    questionContentElem.textContent = data2.question.context;
-    otherContentElem.textContent = "";
+    errorArea.textContent = "";
 
-    if (data.status == "active") {
-      timeElem.textContent = String(
-        Math.max(0, Math.floor(data2.ended_at - Date.now() / 1000))
-      ).padStart(2, "0");
-      timerRowElem.style.display = "flex";
-      answerAreaElem.style.display = "none";
-    } else {
-      timeElem.textContent = "";
+    const data = (await res.json());
+
+    if (
+      data.status == "standby" ||
+      data.status == "closed" ||
+      data.status == "finished"
+    ) {
+      questionNumberElem.textContent = "";
+      questionContentElem.textContent = "";
       timerRowElem.style.display = "none";
-      answerAreaElem.style.display = "block";
-
-      let answersListString = "";
-      for (let i = 0; i < data2.correct_choice.length; i++) {
-        answersListString += data2.correct_choice[i].context;
-        if (i % 13 == 12) {
-          answersListString += "\n";
-        } else if (i != data2.correct_choice.length - 1) {
-          answersListString += ", ";
-        }
+      answerAreaElem.style.display = "none";
+      if (data.status == "standby") {
+        otherContentElem.textContent = "問題";
+      } else if (data.status == "closed") {
+        otherContentElem.textContent = "集計中";
+      } else if (data.status == "finished") {
+        otherContentElem.textContent = "終了";
       }
-      answersContentElem.textContent = answersListString;
+    } else {
+      const data2 = data.data;
+      questionNumberElem.textContent = data2.round + "問目";
+      questionContentElem.textContent = data2.question.context;
+      otherContentElem.textContent = "";
+
+      if (data.status == "active") {
+        timeElem.textContent = String(
+          Math.max(0, Math.floor(data2.ended_at - Date.now() / 1000))
+        ).padStart(2, "0");
+        timerRowElem.style.display = "flex";
+        answerAreaElem.style.display = "none";
+      } else {
+        timeElem.textContent = "";
+        timerRowElem.style.display = "none";
+        answerAreaElem.style.display = "block";
+
+        let answersListString = "";
+        for (let i = 0; i < data2.correct_choice.length; i++) {
+          answersListString += data2.correct_choice[i].context;
+          if (i % 13 == 12) {
+            answersListString += "\n";
+          } else if (i != data2.correct_choice.length - 1) {
+            answersListString += ", ";
+          }
+        }
+        answersContentElem.textContent = answersListString;
+      }
     }
+  } catch (e) {
+    errorArea.textContent = `APIエラー: ${e}`;
+    return;
   }
 }
 
-function startSse() {
-  if (eventSource) return;
-
-  const url = "/api/quiz/stream";
-  eventSource = new EventSource(url);
-
-  eventSource.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      errorArea.textContent = "";
-      updateViewFromData(data);
-    } catch (e) {
-      console.error("SSE data parse error", e);
-      errorArea.textContent = `データパースエラー: ${e}`;
-    }
-  };
-
-  eventSource.onerror = (err) => {
-    console.error("SSE error", err);
-    errorArea.textContent = "SSE接続でエラーが発生しました";
-    // 必要ならここで再接続ロジックを実装
-  };
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "Enter" && !enterHandled) {
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter' && !enterHandled) {
       enterHandled = true;
       questionAreaElem.style.display = "block";
       answerAreaElem.style.display = "block";
       qrImageElem.style.display = "none";
-
-      // SSE購読開始
-      startSse();
+      fetchAndShowMockQuestion();
+      setInterval(fetchAndShowMockQuestion, 1000);
     }
   });
 });

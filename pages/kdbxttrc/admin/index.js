@@ -1,4 +1,5 @@
 const API_START = "/api/admin/start";
+const API_STATE = "/api/admin/state";
 const API_RESET = "/api/admin/reset";
 
 const STORAGE_KEY_AUTH = "kdbxttrc_admin_auth";
@@ -118,10 +119,11 @@ async function startQuiz(payloadOrNull) {
         }
       : { method: "POST" };
 
-  const data = await fetchJson(API_START, opts);
+    const data = await fetchJson(API_START, opts);
     setStatus(startStatusEl, "ok", "開始しました");
 
-    // クイズ状態は SSE で自動更新されるため、ここでは明示的な再取得はしない
+    // refresh state view after starting
+    await refreshState();
   } catch (e) {
     const detail = e?.data ?? undefined;
     setStatus(startStatusEl, "err", `失敗: ${String(e?.message || e)}`);
@@ -165,39 +167,18 @@ function parseStartForm() {
   };
 }
 
-let quizEventSource = null;
+let pollTimer = null;
 
-function connectQuizSse() {
-  if (quizEventSource) return;
-
-  const stateJsonEl = el("stateJson");
-
-  quizEventSource = new EventSource("/api/quiz/stream");
-
-  quizEventSource.onopen = () => {
-    setStatus(el("startStatus"), null, "クイズ状態を監視中…");
-  };
-
-  quizEventSource.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      setBadge(data.status);
-      stateJsonEl.textContent = prettyJson(data);
-    } catch (e) {
-      stateJsonEl.textContent = `SSEデータのパースに失敗しました\n\n${String(
-        e
-      )}`;
-    }
-  };
-
-  quizEventSource.onerror = (err) => {
-    console.error("Admin SSE error", err);
-    setStatus(
-      el("startStatus"),
-      "err",
-      "クイズ状態SSE接続でエラーが発生しました"
-    );
-  };
+function setPollingEnabled(enabled) {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  if (enabled) {
+    pollTimer = setInterval(() => {
+      refreshState();
+    }, 2000);
+  }
 }
 
 function main() {
@@ -254,8 +235,15 @@ function main() {
     resetQuiz();
   });
 
-  // 初期表示: クイズ状態を SSE で購読
-  connectQuizSse();
+  const pollToggle = el("pollToggle");
+  pollToggle.addEventListener("change", () => {
+    setPollingEnabled(pollToggle.checked);
+    appendLog(`Auto refresh: ${pollToggle.checked ? "ON" : "OFF"}`);
+  });
+
+  // initial
+  refreshState();
+  setPollingEnabled(pollToggle.checked);
 }
 
 main();

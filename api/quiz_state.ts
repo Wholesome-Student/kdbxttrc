@@ -37,27 +37,6 @@ export type QuizState =
 // 現在のクイズ状態
 let currentState: QuizState = { status: "standby" };
 
-// 状態変更を通知するための購読者リスト
-type QuizStateListener = (state: QuizState) => void;
-const listeners = new Set<QuizStateListener>();
-
-export function subscribeQuizState(listener: QuizStateListener): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-function notifyQuizStateChanged(state: QuizState) {
-  for (const l of listeners) {
-    try {
-      l(state);
-    } catch (e) {
-      console.error("quiz state listener error", e);
-    }
-  }
-}
-
 // 内部で管理する自動遷移タイマー (setTimeout の ID)
 let autoTransitionTimer: number | undefined = undefined;
 
@@ -88,9 +67,6 @@ export function setQuizState(state: QuizState): void {
   clearAutoTransitionTimer();
 
   currentState = state;
-
-  // 購読者へ通知
-  notifyQuizStateChanged(state);
 
   if (state.status === "active") {
     // 出題時間: 20秒
