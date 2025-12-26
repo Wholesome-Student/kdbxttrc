@@ -4,6 +4,7 @@ import {
   type QuizState,
 } from "../../quiz_state.ts";
 import { hasDbConfig, query } from "../../utils/db.ts";
+import { isAdminRequest, unauthorizedResponse } from "../../utils/auth.ts";
 
 function json(obj: unknown, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -15,6 +16,10 @@ function json(obj: unknown, status = 200) {
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
+  }
+
+  if (!isAdminRequest(req)) {
+    return unauthorizedResponse();
   }
 
   // Allow empty POST (no JSON) — treat as defaults. If JSON is present, parse and validate it.

@@ -1,5 +1,6 @@
 import { getQuizState, setQuizState } from "../../quiz_state.ts";
 import { hasDbConfig, query } from "../../utils/db.ts";
+import { isAdminRequest, unauthorizedResponse } from "../../utils/auth.ts";
 
 /**
  * 管理者用: 全ユーザーの回答・ビンゴ状態をリセットするエンドポイント
@@ -13,6 +14,10 @@ import { hasDbConfig, query } from "../../utils/db.ts";
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
+  }
+
+  if (!isAdminRequest(req)) {
+    return unauthorizedResponse();
   }
 
   if (!hasDbConfig()) {

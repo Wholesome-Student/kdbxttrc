@@ -23,6 +23,46 @@
     </header>
 
     <main class="container">
+      <section class="card" id="loginSection">
+        <div class="card__header">
+          <h2>Login</h2>
+          <p class="muted">Basic 認証 (ブラウザに保存されます)</p>
+        </div>
+
+        <form id="loginForm" class="form">
+          <label class="field">
+            <span class="field__label">ユーザー名</span>
+            <input
+              name="username"
+              class="input"
+              type="text"
+              autocomplete="username"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span class="field__label">パスワード</span>
+            <input
+              name="password"
+              class="input"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+
+          <div class="row">
+            <button class="btn btn--primary" type="submit">ログイン</button>
+            <button id="logoutBtn" class="btn btn--ghost" type="button">
+              ログアウト
+            </button>
+          </div>
+
+          <div id="loginStatus" class="status" aria-live="polite"></div>
+        </form>
+      </section>
+
       <section class="grid">
         <div class="card">
           <div class="card__header">

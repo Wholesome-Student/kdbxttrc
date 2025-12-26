@@ -1,6 +1,8 @@
 const API_START = "/api/admin/start";
 const API_RESET = "/api/admin/reset";
 
+const STORAGE_KEY_AUTH = "kdbxttrc_admin_auth";
+
 const el = (id) => {
   const e = document.getElementById(id);
   if (!e) throw new Error(`Missing element: #${id}`);
@@ -44,6 +46,7 @@ async function fetchJson(url, opts = {}) {
       ...opts,
       headers: {
         ...(opts.headers || {}),
+        ...buildAuthHeader(),
       },
       signal: controller.signal,
     });
@@ -71,6 +74,30 @@ async function fetchJson(url, opts = {}) {
   } finally {
     clearTimeout(t);
   }
+}
+
+function buildAuthHeader() {
+  const raw = window.localStorage.getItem(STORAGE_KEY_AUTH);
+  if (!raw) return {};
+  try {
+    const { username, password } = JSON.parse(raw);
+    if (!username || !password) return {};
+    const token = btoa(`${username}:${password}`);
+    return { Authorization: `Basic ${token}` };
+  } catch {
+    return {};
+  }
+}
+
+function saveAuth(username, password) {
+  window.localStorage.setItem(
+    STORAGE_KEY_AUTH,
+    JSON.stringify({ username, password })
+  );
+}
+
+function clearAuth() {
+  window.localStorage.removeItem(STORAGE_KEY_AUTH);
 }
 
 async function startQuiz(payloadOrNull) {
@@ -174,6 +201,41 @@ function connectQuizSse() {
 }
 
 function main() {
+  // Login form
+  const loginForm = document.getElementById("loginForm");
+  const loginStatusEl = document.getElementById("loginStatus");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (loginForm && loginStatusEl && logoutBtn) {
+    loginForm.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const fd = new FormData(loginForm);
+      const username = String(fd.get("username") || "").trim();
+      const password = String(fd.get("password") || "");
+
+      if (!username || !password) {
+        setStatus(
+          loginStatusEl,
+          "err",
+          "ユーザー名とパスワードを入力してください"
+        );
+        return;
+      }
+
+      saveAuth(username, password);
+      setStatus(
+        loginStatusEl,
+        "ok",
+        "保存しました。この認証情報でAPIを呼び出します。"
+      );
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      clearAuth();
+      setStatus(loginStatusEl, "ok", "認証情報を削除しました");
+    });
+  }
+
   el("refreshBtn").addEventListener("click", () => {
     appendLog("Manual refresh");
     refreshState();
