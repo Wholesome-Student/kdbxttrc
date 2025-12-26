@@ -93,8 +93,8 @@ export function setQuizState(state: QuizState): void {
   notifyQuizStateChanged(state);
 
   if (state.status === "active") {
-    // 出題時間: 15秒
-    const delayMs = 15_000;
+    // 出題時間: 20秒
+    const delayMs = 20_000;
     autoTransitionTimer = setTimeout(() => {
       const s = currentState;
 
@@ -107,8 +107,8 @@ export function setQuizState(state: QuizState): void {
       setQuizState(closedState);
     }, delayMs) as unknown as number;
   } else if (state.status === "closed") {
-    // 待機時間: 5秒
-    const delayMs = 5_000;
+    // 待機時間: 3秒
+    const delayMs = 3_000;
 
     autoTransitionTimer = setTimeout(async () => {
       const s = currentState;
@@ -235,8 +235,8 @@ export function setQuizState(state: QuizState): void {
       }
     }, delayMs) as unknown as number;
   } else if (state.status === "result") {
-    // 表示時間: 5秒
-    const delayMs = 5_000;
+    // 表示時間: 10秒
+    const delayMs = 10_000;
     autoTransitionTimer = setTimeout(async () => {
       const s = currentState;
 
